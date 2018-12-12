@@ -144,7 +144,7 @@ steps:
       host: {from_secret: deploy_beta_host}
       username: {from_secret: deploy_username}
       key: {from_secret: deploy_key}
-      target: ./builds/${DRONE_BUILD_NUMBER}
+      target: ./cortex-builds/${DRONE_BUILD_NUMBER}
       source: target/universal/stage
       strip_components: 3
 
@@ -155,7 +155,7 @@ steps:
       username: {from_secret: deploy_username}
       key: {from_secret: deploy_key}
       script:
-        - ./start_thehive ${DRONE_BUILD_NUMBER}
+        - ./start cortex ${DRONE_BUILD_NUMBER}
 
 volumes:
   - name: cache
