@@ -77,6 +77,7 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     bind[EUserSrv].to[UserSrv]
     bind[Int].annotatedWith(Names.named("databaseVersion")).toInstance(models.modelVersion)
     bind[UserMapper].to[MultiUserMapperSrv]
+    bind[Monitor].asEagerSingleton()
 
     bind[AuthSrv].to[CortexAuthSrv]
     bind[MigrationOperations].to[Migration]

@@ -6,24 +6,22 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Date
 
-import scala.concurrent.duration.DurationLong
+import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-
 import play.api.libs.json._
 import play.api.{Configuration, Logger}
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import org.thp.cortex.models._
-
 import org.elastic4play.BadRequestError
 import org.elastic4play.controllers.{Fields, FileInputValue}
 import org.elastic4play.database.ModifyConfig
 import org.elastic4play.services.{AttachmentSrv, AuthContext, CreateSrv, UpdateSrv}
 
+@Singleton
 class JobRunnerSrv @Inject()(
     config: Configuration,
     reportModel: ReportModel,
@@ -35,13 +33,23 @@ class JobRunnerSrv @Inject()(
     updateSrv: UpdateSrv,
     attachmentSrv: AttachmentSrv,
     akkaSystem: ActorSystem,
+    monitor: Monitor,
     implicit val ec: ExecutionContext,
     implicit val mat: Materializer
 ) {
 
-  val logger                                           = Logger(getClass)
-  lazy val analyzerExecutionContext: ExecutionContext  = akkaSystem.dispatchers.lookup("analyzer")
-  lazy val responderExecutionContext: ExecutionContext = akkaSystem.dispatchers.lookup("responder")
+  val logger: Logger                          = Logger(getClass)
+  val monitorInterval: Option[FiniteDuration] = config.getOptional[FiniteDuration]("monitor.interval")
+  lazy val analyzerExecutionContext: ExecutionContext = {
+    val d = akkaSystem.dispatchers.lookup("analyzer")
+    monitor.monitorExecutor(d, "analyzer")
+    d
+  }
+  lazy val responderExecutionContext: ExecutionContext = {
+    val d = akkaSystem.dispatchers.lookup("responder")
+    monitor.monitorExecutor(d, "responder")
+    d
+  }
 
   private val runners: Seq[String] = config
     .getOptional[Seq[String]]("job.runners")
